@@ -1,0 +1,4 @@
+rm -rf ./lookup_table.csv
+touch lookup_table.csv
+rm -rf data/
+mkdir data

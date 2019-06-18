@@ -1,0 +1,2 @@
+Layer,	DRAM_IFMAP_start,	DRAM_IFMAP_stop,	DRAM_IFMAP_bytes,	DRAM_Filter_start,	DRAM_Filter_stop,	DRAM_Filter_bytes,	DRAM_OFMAP_start,	DRAM_OFMAP_stop,	DRAM_OFMAP_bytes,	SRAM_read_start,	SRAM_read_stop,	SRAM_read_bytes,	SRAM_write_start,	SRAM_write_stop,	SRAM_write_bytes,
+validation_conv,	-5.0,	-1.0,	50,	-8.0,	-1.0,	72,	224.0,	227.0,	36,	0.0,	213.0,	864,	19.0,	223.0,	72,	
