@@ -15,14 +15,13 @@ df_list = ['ws', 'is']
 #df_list = ['ws']
 
 topo_list = [
-                "FasterRCNN.csv",
-                "DeepSpeech2.csv",
-                "AlphaGoZero.csv",
-                "NCF_recommendation_short.csv",
-                "Resnet50.csv",
-                "Sentimental_seqCNN.csv",
-                "Transformer_short.csv",
-                "Googlenet.csv",
+                "FasterRCNN",
+                "DeepSpeech2",
+                "AlphaGoZero",
+                "NCF_recommendation",
+                "Resnet50",
+                "Sentimental_seqCNN",
+                "Googlenet",
                 "vgg16",
                 "alexnet" 
             ]
@@ -62,11 +61,11 @@ def launch_runs():
     
     #topo_list_this = [topo_list[5], topo_list[7]]
     #topo_list_this = [topo_list[2]]
-    topo_list_this = topo_list[:-2]
+    topo_list_this = topo_list[0:-1]
 
     rescale_params(factor=factor)
     
-    mult_list = [x  for x in range(1,6)]
+    mult_list = [x  for x in range(1,11)]
     #mult_list += [20, 50]
     #mult_list = [10]
     #mem_mult_list = [x for x in range (1,11)]
@@ -104,7 +103,9 @@ def launch_runs():
                             scale_path=scale_path
                             )
                 fileloc = destpath +"/"+dirname    
-                topology = "/home/anand/repos/fccm_scale_runs/max_util_topo/" + df + "/max_util_" + df + "_" + str(num_cols) + "/" + topo
+                topology  = "/home/anand/repos/fccm_scale_runs/max_util_topo/" 
+                topology += df + "/max_util_" + df + "_" + str(num_cols) + "/" + topo
+                topology += "_" + df + "_" + str(num_cols) + ".csv"
                 ut.generate_config(
                         fileloc=fileloc,
                         runname=runname,

@@ -186,7 +186,7 @@ class scale:
 
 
 if __name__ == "__main__":
-    s = scale(save = False, sweep = False)
+    s = scale(save = True, sweep = False)
     s.run_scale()
 
     
