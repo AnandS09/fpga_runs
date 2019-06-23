@@ -19,3 +19,4 @@ for i in range(1,11):
         os.system(cmd)
 
         cmd = "mv " + dest + " scale_runs_out/"
+        os.system(cmd)
