@@ -5,8 +5,7 @@ import multiprocessing as mp
 import subprocess as sp
 
 scale_path = "/home/anand/repos/fccm_scale_runs/silent_scale_sim/"
-simd_mode = 1
-num_proc = 96 
+num_phy_proc = 960                  # Number of physical processors available on chip
 weight_mem_per_proc= [36, 288]      # Conv: 36 kbit, Mat Mul: 288 kbit 
 input_mem_per_proc= [252,162]       # Conv: 288 - 36 kbit, Mat Mul:18 * 9 kbit
 output_mem_per_proc = [288, 18]     # Conv: One URAM, Mat Mul: one BRAM
@@ -55,46 +54,44 @@ def launch_runs():
     jobs = []
     #first = False 
     first = True
+
+    # This is to account for the increase in number of cols 
+    # without the increase in total memory of the device
+    simd_mode = True
     factor = 1
+    if simd_mode:
+        factor = 2
+
     #cmd = "mkdir ./scale_runs/"
     #os.system(cmd)
     
-    #topo_list_this = [topo_list[5], topo_list[7]]
-    #topo_list_this = [topo_list[2]]
-    topo_list_this = topo_list[0:-1]
+    # Set the step size of the processors
+    step_size = 0.1     # This is the step size in fraction of total number of processors
+    proc_per_step = math.ceil(step_size * num_phy_proc)
 
+    # Scale the memory per processor
     rescale_params(factor=factor)
     
+    # Set the iterable lists
+    topo_list_this = topo_list[0:-2]
     mult_list = [x  for x in range(1,11)]
-    #mult_list += [20, 50]
-    #mult_list = [10]
-    #mem_mult_list = [x for x in range (1,11)]
-    #mem_mult_list += [0.5, 0.2]
 
     for topo in topo_list_this:
         jobs = []
 
-        #for i in range(1,11):
         for i in mult_list:
-        #for i in mem_mult_list:
             num_rows = 9
-            num_cols = int(math.ceil(num_proc/factor * i))
-            #num_cols = int(num_proc * 10)
+            num_cols = int(math.ceil(proc_per_step * i))
             
             for df_idx in range(2):
                 df = df_list[df_idx]
                 weight_mem = int(weight_mem_per_proc[df_idx] * num_cols / 8)  # div 8 converts to KB
-                #weight_mem = int(weight_mem_per_proc * num_cols / (8 * i))  # div 8 converts to KB
                 input_mem = int(input_mem_per_proc[df_idx] * num_cols / 8)
-                #input_mem = int(input_mem_per_proc * num_cols / (8 * i))
                 output_mem = int(output_mem_per_proc[df_idx] * num_cols / 8)   
 
                 destpath = "./scale_runs"
-                #dirname = str(weight_mem) + "KB_WeightMem_" + str(input_mem) + "KB_IfmapMem_"
-                #dirname += str(num_rows) + "x" + str(num_cols) + "_" + df 
                 dirname = str(num_rows) + "x" + str(num_cols) + "_" + df 
                 runname = topo.split('.')[0] + "_" + dirname
-                #scale_path = "./silent_scale_sim/"
 
                 if first:
                     ut.prepare_dir(
@@ -102,10 +99,13 @@ def launch_runs():
                             dirname=dirname,
                             scale_path=scale_path
                             )
+
+                topo_num_cols = num_cols 
                 fileloc = destpath +"/"+dirname    
                 topology  = "/home/anand/repos/fccm_scale_runs/max_util_topo/" 
-                topology += df + "/max_util_" + df + "_" + str(num_cols) + "/" + topo
-                topology += "_" + df + "_" + str(num_cols) + ".csv"
+                #topology += df + "/max_util_" + df + "_" + str(topo_num_cols) + "/" + topo
+                topology += df + "/" + topo
+                topology += "_" + df + "_" + str(topo_num_cols) + ".csv"
                 ut.generate_config(
                         fileloc=fileloc,
                         runname=runname,
@@ -118,18 +118,33 @@ def launch_runs():
                         topology=topology
                         )
 
-                #job = mp.Process(target=scale_run,args=(num_rows,num_cols,df_idx))
                 job = mp.Process(target=scale_run,args=(num_rows,num_cols,df_idx, weight_mem, input_mem))
                 jobs.append(job)
             
         first = False
-        for job in jobs:
-            job.start()
-
-        print("Started all jobs for " + topo)
         
-        for job in jobs:
-            job.join()
+        num_jobs = len(jobs)
+        fraction = 0.5
+        batch_size = int(fraction * num_jobs)
+        start_idx = 0
+        remaining = num_jobs
+
+        while remaining > 0:
+            runs_this_iter = min(remaining, batch_size)
+            end_idx = start_idx + runs_this_iter
+
+            for job in jobs[start_idx: end_idx]:
+                job.start()
+
+            msg = "Started jobs "+str(start_idx)+" to " +str(end_idx)+" for " + topo
+            print(msg, end="")
+
+            for job in jobs[start_idx: end_idx]:
+                job.join()
+            print(": Done")
+        
+            remaining -= runs_this_iter
+            start_idx += runs_this_iter
 
         print("All jobs for " + topo + " finished")
        
